@@ -53,39 +53,26 @@ example SpikeInterface pipeline with peak extraction and motion correction using
 MEDiCINe motion estimation:
 ```
 from pathlib import Path
-from medicine import run as run_medicine
+from medicine import run_medicine, get_spikeinterface_motion
 import numpy as np
 
-from spikeinterface.core.node_pipeline import ExtractDenseWaveforms, run_node_pipeline
+from spikeinterface.sortingcomponents.peak_detection import detect_peaks
+from spikeinterface.sortingcomponents.peak_localization import localize_peaks
 from spikeinterface.sortingcomponents.motion.motion_interpolation import InterpolateMotionRecording
-from spikeinterface.sortingcomponents.motion import motion_utils
-from spikeinterface.sortingcomponents.peak_detection import detect_peak_methods
-from spikeinterface.sortingcomponents.peak_localization import localize_peak_methods
 
 # SpikeInterface recording object you would like to do motion correction for
 recording = ...
 
 # Detect, extract, and localize peaks, such as with the following pipeline
-node_detect = detect_peak_methods['locally_exclusive'](
-    recording, detect_threshold=10)
-node_extract = ExtractDenseWaveforms(
-    recording, parents=[node_detect], ms_before=0.1, ms_after=0.3)
-node_localize = localize_peak_methods['monopolar_triangulation'](
-    recording, parents=[node_detect, node_extract], return_output=True)
-peaks, peak_locations = run_node_pipeline(
-    recording,
-    [node_detect, node_extract, node_localize],
-    dict(chunk_duration='1s', n_jobs=-1, progress_bar=True),
-    job_name='detect_and_localize',
-    squeeze_output=False,
-)
+peaks = detect_peaks(recording, method="locally_exclusive")
+peak_locations = localize_peaks(recording, peaks, method="monopolar_triangulation")
 
 # Create directory to store MEDiCINe outputs for this recording
 medicine_output_dir = Path('path/to/medicine/output/directory')
 medicine_output_dir.mkdir(parents=True, exist_ok=True)
 
 # Run MEDiCINe to estimate motion
-run_medicine.run_medicine(
+run_medicine(
     peak_amplitudes=peaks['amplitude'],
     peak_depths=peak_locations['y'],
     peak_times=peaks['sample_index'] / recording.get_sampling_frequency(),
@@ -93,16 +80,9 @@ run_medicine.run_medicine(
 )
 
 # Load motion estimated by MEDiCINe
-motion = np.load(medicine_output_dir / 'motion.npy')
-time_bins = np.load(medicine_output_dir / 'time_bins.npy')
-depth_bins = np.load(medicine_output_dir / 'depth_bins.npy')
+motion_object = get_spikeinterface_motion(medicine_output_dir)
 
-# Use interpolation to correct for motion estimated by MEDiCINe
-motion_object = motion_utils.Motion(
-    displacement=motion,
-    temporal_bins_s=time_bins,
-    spatial_bins_um=depth_bins,
-)
+# Interpolate motion into recording object
 recording_motion_corrected = InterpolateMotionRecording(
     recording,
     motion_object,
