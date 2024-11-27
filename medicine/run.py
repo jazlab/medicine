@@ -17,12 +17,11 @@ import torch
 from medicine import model, plotting
 from medicine.logger import logger
 
-
 def run_medicine(
     peak_times: np.ndarray,
     peak_depths: np.ndarray,
     peak_amplitudes: np.ndarray,
-    output_dir: str,
+    output_dir: str | None,
     motion_bound: float = 800,
     time_bin_size: float = 1,
     time_kernel_width: float = 30,
@@ -37,6 +36,7 @@ def run_medicine(
     learning_rate: float = 0.0005,
     epsilon: float = 1e-3,
     plot_figures: bool = True,
+    return_motion: bool = True,
 ) -> model.Trainer:
     """Run MEDICINE motion estimation.
 
@@ -44,7 +44,7 @@ def run_medicine(
         peak_times: Array of shape [num_peaks] containing peak times.
         peak_depths: Array of shape [num_peaks] containing peak depths.
         peak_amplitudes: Array of shape [num_peaks] containing peak amplitudes.
-        output_dir: Directory to save output.
+        output_dir: Directory to save output. If None then nothing is saved.
         motion_bound: Bound on maximum absolute motion, namely the difference
             between the max and min depth.
         time_bin_size: Temporal resolution of motion estimation.
@@ -68,20 +68,23 @@ def run_medicine(
         learning_rate: Learning rate for training.
         epsilon: Small value to prevent instabilities.
         plot_figures: Whether to plot figures.
+        return_motion: also return the spikeinterface Motion object
 
     Returns:
         trainer: Trainer object after running motion estimation.
+        if return_motion=True also return the Motion object
     """
     # Create and clear output_dir
-    logger.info(f"Creating output_dir {output_dir}")
-    output_dir = Path(output_dir)
-    if output_dir.exists():
-        logger.info(f"Warning: {output_dir} already exists")
-    output_dir.mkdir(exist_ok=True, parents=True)
+    if output_dir is not None:
+        logger.info(f"Creating output_dir {output_dir}")
+        output_dir = Path(output_dir)
+        if output_dir.exists():
+            logger.info(f"Warning: {output_dir} already exists")
+        output_dir.mkdir(exist_ok=True, parents=True)
 
     # Save parameters
     parameters = dict(
-        output_dir=str(output_dir),
+        output_dir=str(output_dir) if output_dir is not None else None,
         motion_bound=motion_bound,
         time_bin_size=time_bin_size,
         time_kernel_width=time_kernel_width,
@@ -96,12 +99,15 @@ def run_medicine(
         epsilon=epsilon,
         plot_figures=plot_figures,
     )
-    parameters_path = output_dir / "medicine_parameters.json"
-    logger.info(f"Saving parameters to {output_dir}")
-    json.dump(parameters, open(parameters_path, "w"))
+    if output_dir is not None:
+        parameters_path = output_dir / "medicine_parameters.json"
+        logger.info(f"Saving parameters to {output_dir}")
+        json.dump(parameters, open(parameters_path, "w"))
 
     # Plot raster and amplitudes if necessary
     if plot_figures:
+        if output_dir is None:
+            raise ValueError("run_medicine(): when plot_figures=True, output_dir must be not None")
         plotting.plot_raster_and_amplitudes(
             peak_times, peak_depths, peak_amplitudes, figure_dir=output_dir
         )
@@ -175,11 +181,15 @@ def run_medicine(
         depth_range[1] - depth_range[0]
     )
 
+
+
+
     # Save motion estimation results
-    logger.info(f"Saving outputs to {output_dir}")
-    np.save(output_dir / "time_bins.npy", time_bins)
-    np.save(output_dir / "depth_bins.npy", depth_bins)
-    np.save(output_dir / "motion.npy", pred_motion)
+    if output_dir is not None:
+        logger.info(f"Saving outputs to {output_dir}")
+        np.save(output_dir / "time_bins.npy", time_bins)
+        np.save(output_dir / "depth_bins.npy", depth_bins)
+        np.save(output_dir / "motion.npy", pred_motion)
 
     # Plot motion estimation results if necessary
     if plot_figures:
@@ -188,4 +198,14 @@ def run_medicine(
             trainer=trainer,
         )
 
-    return trainer
+
+    if return_motion:
+        from spikeinterface.sortingcomponents.motion import Motion
+        motion = Motion(
+            displacement=[pred_motion],
+            temporal_bins_s=[time_bins],
+            spatial_bins_um=depth_bins,
+        )
+        return trainer, motion
+    else:
+        return trainer
