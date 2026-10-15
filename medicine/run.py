@@ -10,13 +10,13 @@ Usage: See ../medicine_demos/run_demo.py for an example of usage.
 
 import json
 from pathlib import Path
+from typing import Tuple
 
 import numpy as np
 import torch
 
 from medicine import model, plotting
 from medicine.logger import logger
-from typing import Tuple
 
 
 def run_medicine(
@@ -53,13 +53,13 @@ def run_medicine(
         activity_network_hidden_features: Tuple of hidden features for the
             activity network.
         num_depth_bins: Number of depth bins for motion estimation.
-        amplitude_threshold_quantile: FLoat in [-1, 1]. Cutoff quantile for peak
-            amplitudes. If 0, no cutoff is applied and all peaks are used. If >
-            0, then the smallest amplitude_threshold_quantile fraction of
-            amplitudes are ignored. If < 0, then the largest
-            amplitude_threshold_quantile fraction of amplitudes are ignored. See
-            "raw_raster_and_amplitudes.png" output figure for a histogram of all
-            amplitudes used by the model.
+        amplitude_threshold_quantile: Float in [0, 1). Fraction of peaks with
+            the smallest absolute amplitude to ignore. If 0, no cutoff is
+            applied and all peaks are used. Because the cutoff is applied to
+            absolute amplitude, this removes peaks with amplitude near zero
+            regardless of whether amplitudes are positive, negative, or both.
+            See "raw_raster_and_amplitudes.png" output figure for a histogram
+            of all amplitudes.
         batch_size: Batch size for training.
         training_steps: Number of training steps.
         initial_motion_noise: Initial motion noise.
@@ -92,6 +92,7 @@ def run_medicine(
         time_kernel_width=time_kernel_width,
         activity_network_hidden_features=activity_network_hidden_features,
         num_depth_bins=num_depth_bins,
+        amplitude_threshold_quantile=amplitude_threshold_quantile,
         batch_size=batch_size,
         training_steps=training_steps,
         initial_motion_noise=initial_motion_noise,
@@ -109,7 +110,9 @@ def run_medicine(
     # Plot raster and amplitudes if necessary
     if plot_figures:
         if output_dir is None:
-            raise ValueError("run_medicine(): when plot_figures=True, output_dir must be not None")
+            raise ValueError(
+                "run_medicine(): when plot_figures=True, output_dir must be not None"
+            )
         plotting.plot_raster_and_amplitudes(
             peak_times, peak_depths, peak_amplitudes, figure_dir=output_dir
         )
@@ -196,6 +199,5 @@ def run_medicine(
             figure_dir=output_dir,
             trainer=trainer,
         )
-
 
     return trainer, time_bins, depth_bins, pred_motion

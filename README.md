@@ -194,17 +194,16 @@ method](https://github.com/jazlab/medicine/blob/main/medicine/run.py#L20):
   extremes of the array.
 
 
-* `amplitude_threshold_quantile`: Float in [-1, 1], default 0. Cutoff quantile
-  for peak amplitudes. If 0, no cutoff is applied and all peaks are used. If >
-  0, then the smallest amplitude_threshold_quantile fraction of amplitudes are
-  ignored. If < 0, then the largest amplitude_threshold_quantile fraction of
-  amplitudes are ignored. See "raw_raster_and_amplitudes.png" output figure for
-  a histogram of all amplitudes used by the model. Typically 0 is a good value.
+* `amplitude_threshold_quantile`: Float in [0, 1), default 0. Fraction of peaks
+  with the smallest absolute amplitude to ignore. If 0, no cutoff is applied
+  and all peaks are used. Because the cutoff is applied to absolute amplitude,
+  this removes peaks with amplitude near zero regardless of whether amplitudes
+  are positive, negative, or both. See "raw_raster_and_amplitudes.png" output
+  figure for a histogram of all amplitudes. Typically 0 is a good value.
   However, if you find that there are a lot of low amplitude spikes and they may
   be causing the model to go astray, you may want to consider making this
-  non-zero. Making it positive will remove low-amplitude spikes if the spike
-  amplitudes are positive. Making it negative will remove low-amplitude spikes
-  if the spike amplitudes are negative.
+  non-zero. Note: in versions before 1.7 this parameter thresholded signed
+  amplitudes and accepted negative values; negative values now raise an error.
 
 
 * `batch_size`: Int, default 4096. Batch size for optimization. Reducing this
@@ -273,9 +272,8 @@ resolutions:
 4. Bad spikes. If spike detection is poor, you may have a lot of bad spikes,
    such as low-amplitude spikes that are specific to particular channels and do
    not show motion. In this case increase `amplitude_threshold_quantile`. For
-   example, setting `amplitude_threshold_quantile = 0.25` will ignore the
-   lowest-amplitude 25% of spikes. If high-amplitude spikes are the issue, set
-   `amplitude_threshold_quantile < 0`.
+   example, setting `amplitude_threshold_quantile = 0.25` will ignore the 25% of
+   spikes with amplitude closest to zero.
 
 ## Reproducing Our Results
 

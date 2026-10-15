@@ -1,6 +1,6 @@
 [project]
 name = "medicine-neuro"
-version = "1.6"
+version = "1.7"
 description = "MEDiCINe: Motion Estimation by Distributional Contrastive Inference for Neurophysiology."
 readme = "README.md"
 requires-python = ">=3.9.6"

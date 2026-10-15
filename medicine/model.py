@@ -116,25 +116,40 @@ class Dataset:
             times: Array of times for each peak (in seconds).
             depths: Array of depths for each peak (in microns).
             amplitudes: Array of amplitudes for each peak.
-            amplitude_threshold_quantile: FLoat in [-1, 1]. Cutoff quantile for
-                peak amplitudes. If 0, no cutoff is applied and all peaks are
-                used. If > 0, then the smallest amplitude_threshold_quantile
-                fraction of amplitudes are ignored. If < 0, then the largest
-                amplitude_threshold_quantile fraction of amplitudes are ignored.
-                See "raw_raster_and_amplitudes.png" output figure for a
-                histogram of all amplitudes used by the model.
+            amplitude_threshold_quantile: Float in [0, 1). Fraction of peaks
+                with the smallest absolute amplitude to ignore. If 0, no
+                cutoff is applied and all peaks are used. Because the cutoff
+                is applied to absolute amplitude, this removes peaks with
+                amplitude near zero regardless of whether amplitudes are
+                positive, negative, or both. See
+                "raw_raster_and_amplitudes.png" output figure for a histogram
+                of all amplitudes.
         """
         logger.info("Constructing Dataset instance")
 
-        # Apply amplitude threshold
-        if amplitude_threshold_quantile > 0:
-            threshold = np.quantile(amplitudes, amplitude_threshold_quantile)
-            mask = amplitudes > threshold
-        elif amplitude_threshold_quantile < 0:
-            threshold = np.quantile(
-                amplitudes, 1 + amplitude_threshold_quantile
+        # Validate amplitude threshold
+        if amplitude_threshold_quantile < 0:
+            raise ValueError(
+                "amplitude_threshold_quantile must be in [0, 1), but got "
+                f"{amplitude_threshold_quantile}. Negative values are no "
+                "longer supported: the threshold is now applied to absolute "
+                "amplitude, so a positive value removes peaks with amplitude "
+                "near zero whether amplitudes are positive or negative."
             )
-            mask = amplitudes < threshold
+        if amplitude_threshold_quantile >= 1:
+            raise ValueError(
+                "amplitude_threshold_quantile must be in [0, 1), but got "
+                f"{amplitude_threshold_quantile}. A value of 1 or greater "
+                "would remove all peaks."
+            )
+
+        # Apply amplitude threshold to remove peaks with near-zero amplitude
+        if amplitude_threshold_quantile > 0:
+            abs_amplitudes = np.abs(amplitudes)
+            threshold = np.quantile(
+                abs_amplitudes, amplitude_threshold_quantile
+            )
+            mask = abs_amplitudes > threshold
         else:
             mask = np.ones_like(amplitudes, dtype=bool)
         times = times[mask]
