@@ -284,7 +284,7 @@ class MotionFunction(torch.nn.Module):
         time_range: tuple[float, float],
         time_bin_size: float,
         time_kernel_width: float,
-        num_depth_bins: int = 2,
+        num_depth_bins: int = 1,
         epsilon: float = 1e-3,
     ):
         """Constructor.

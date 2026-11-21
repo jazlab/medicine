@@ -28,7 +28,7 @@ def run_medicine(
     time_bin_size: float = 1,
     time_kernel_width: float = 30,
     activity_network_hidden_features: tuple = (256, 256),
-    num_depth_bins: int = 2,
+    num_depth_bins: int = 1,
     amplitude_threshold_quantile: float = 0.0,
     batch_size: int = 4096,
     training_steps: int = 10000,
@@ -52,7 +52,9 @@ def run_medicine(
         time_kernel_width: Width of temporal kernel for motion estimation.
         activity_network_hidden_features: Tuple of hidden features for the
             activity network.
-        num_depth_bins: Number of depth bins for motion estimation.
+        num_depth_bins: Number of depth bins for motion estimation. A value
+            of 1 (the default) enforces uniform (rigid) motion at all depths.
+            Higher values allow motion to vary with depth.
         amplitude_threshold_quantile: Float in [0, 1). Fraction of peaks with
             the smallest absolute amplitude to ignore. If 0, no cutoff is
             applied and all peaks are used. Because the cutoff is applied to

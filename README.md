@@ -186,12 +186,14 @@ method](https://github.com/jazlab/medicine/blob/main/medicine/run.py#L20):
   sizes for the activity network. Adjusting this is unlikely to improve results.
 
 
-* `num_depth_bins`: Int, default 2. Number of depth bins for motion estimation.
-  A value of 1 will enforce uniform (rigid) motion at all depths. Higher numbers
-  allow more complex dependencies of motion on depth. We find that a value of 2
-  to be sufficient for all of our datasets. A value of 2 allows linear
-  interpolation of motion between two independently fit motion functions at the
-  extremes of the array.
+* `num_depth_bins`: Int, default 1. Number of depth bins for motion estimation.
+  The default value of 1 enforces uniform (rigid) motion at all depths, which is
+  robust and less prone to overfitting. Higher numbers allow more complex
+  dependencies of motion on depth. A value of 2 allows linear interpolation of
+  motion between two independently fit motion functions at the extremes of the
+  array, and we find this to be sufficient for datasets with depth-dependent
+  (non-rigid) motion.
+  Note: in versions before 1.8 the default was 2.
 
 
 * `amplitude_threshold_quantile`: Float in [0, 1), default 0. Fraction of peaks
@@ -260,13 +262,13 @@ resolutions:
 
 1. Overfitting. If you have very few neurons or low firing rates, you may find
    that the motion estimation overfits and looks excessively wiggly. In this
-   case, you may want to try setting `num_depth_bins = 1`, which will enforce
-   uniform (rigit) motion and reduce overfitting. You may also want to increase
-   the motion smoothing kernel size `time_kernel_width`.
+   case, make sure `num_depth_bins = 1` (the default), which enforces uniform
+   (rigid) motion and reduces overfitting. You may also want to increase the
+   motion smoothing kernel size `time_kernel_width`.
 2. Underfitting. If your data has high-frequency motion and it looks like the
    motion is not capturing this, you may want to reduce `time_kernel_width`. If
-   your motion has non-linear dependencies on depth, you may want to increase
-   `num_depth_bins`.
+   your motion varies with depth (non-rigid motion), you may want to increase
+   `num_depth_bins` to 2 (or higher for non-linear dependencies on depth).
 3. Insufficient motion amplitude. If it looks like you have high-amplitude
    motion that MEDiCINe is not capturing that, try increasing `motion_bound`.
 4. Bad spikes. If spike detection is poor, you may have a lot of bad spikes,
