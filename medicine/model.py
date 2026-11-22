@@ -108,7 +108,7 @@ class Dataset:
         times: np.ndarray,
         depths: np.ndarray,
         amplitudes: np.ndarray,
-        amplitude_threshold_quantile: float = 0.0,
+        amplitude_threshold_quantile: float = 0.5,
     ):
         """Constructor.
 
@@ -117,8 +117,9 @@ class Dataset:
             depths: Array of depths for each peak (in microns).
             amplitudes: Array of amplitudes for each peak.
             amplitude_threshold_quantile: Float in [0, 1). Fraction of peaks
-                with the smallest absolute amplitude to ignore. If 0, no
-                cutoff is applied and all peaks are used. Because the cutoff
+                with the smallest absolute amplitude to ignore. The default of
+                0.5 ignores the half of peaks with amplitude closest to zero.
+                If 0, no cutoff is applied and all peaks are used. Because the cutoff
                 is applied to absolute amplitude, this removes peaks with
                 amplitude near zero regardless of whether amplitudes are
                 positive, negative, or both. See

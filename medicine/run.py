@@ -29,7 +29,7 @@ def run_medicine(
     time_kernel_width: float = 30,
     activity_network_hidden_features: tuple = (256, 256),
     num_depth_bins: int = 1,
-    amplitude_threshold_quantile: float = 0.0,
+    amplitude_threshold_quantile: float = 0.5,
     batch_size: int = 4096,
     training_steps: int = 10000,
     initial_motion_noise: float = 0.1,
@@ -56,8 +56,9 @@ def run_medicine(
             of 1 (the default) enforces uniform (rigid) motion at all depths.
             Higher values allow motion to vary with depth.
         amplitude_threshold_quantile: Float in [0, 1). Fraction of peaks with
-            the smallest absolute amplitude to ignore. If 0, no cutoff is
-            applied and all peaks are used. Because the cutoff is applied to
+            the smallest absolute amplitude to ignore. The default of 0.5
+            ignores the half of peaks with amplitude closest to zero. If 0, no
+            cutoff is applied and all peaks are used. Because the cutoff is applied to
             absolute amplitude, this removes peaks with amplitude near zero
             regardless of whether amplitudes are positive, negative, or both.
             See "raw_raster_and_amplitudes.png" output figure for a histogram

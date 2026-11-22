@@ -196,16 +196,18 @@ method](https://github.com/jazlab/medicine/blob/main/medicine/run.py#L20):
   Note: in versions before 1.8 the default was 2.
 
 
-* `amplitude_threshold_quantile`: Float in [0, 1), default 0. Fraction of peaks
-  with the smallest absolute amplitude to ignore. If 0, no cutoff is applied
-  and all peaks are used. Because the cutoff is applied to absolute amplitude,
-  this removes peaks with amplitude near zero regardless of whether amplitudes
-  are positive, negative, or both. See "raw_raster_and_amplitudes.png" output
-  figure for a histogram of all amplitudes. Typically 0 is a good value.
-  However, if you find that there are a lot of low amplitude spikes and they may
-  be causing the model to go astray, you may want to consider making this
-  non-zero. Note: in versions before 1.7 this parameter thresholded signed
-  amplitudes and accepted negative values; negative values now raise an error.
+* `amplitude_threshold_quantile`: Float in [0, 1), default 0.5. Fraction of
+  peaks with the smallest absolute amplitude to ignore. The default of 0.5
+  ignores the half of peaks with amplitude closest to zero, which are often
+  noisy or poorly localized. If 0, no cutoff is applied and all peaks are used.
+  Because the cutoff is applied to absolute amplitude, this removes peaks with
+  amplitude near zero regardless of whether amplitudes are positive, negative,
+  or both. See "raw_raster_and_amplitudes.png" output figure for a histogram of
+  all amplitudes. If you have few spikes (e.g. very few neurons or low firing
+  rates), you may want to decrease this so the model has more data to fit.
+  Note: in versions before 1.9 the default was 0. In versions before 1.7 this
+  parameter thresholded signed amplitudes and accepted negative values; negative
+  values now raise an error.
 
 
 * `batch_size`: Int, default 4096. Batch size for optimization. Reducing this
@@ -273,9 +275,9 @@ resolutions:
    motion that MEDiCINe is not capturing that, try increasing `motion_bound`.
 4. Bad spikes. If spike detection is poor, you may have a lot of bad spikes,
    such as low-amplitude spikes that are specific to particular channels and do
-   not show motion. In this case increase `amplitude_threshold_quantile`. For
-   example, setting `amplitude_threshold_quantile = 0.25` will ignore the 25% of
-   spikes with amplitude closest to zero.
+   not show motion. In this case increase `amplitude_threshold_quantile` above
+   its default of 0.5. For example, setting `amplitude_threshold_quantile =
+   0.75` will ignore the 75% of spikes with amplitude closest to zero.
 
 ## Reproducing Our Results
 
